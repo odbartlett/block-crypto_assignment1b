@@ -23,9 +23,9 @@ With Merkle trees:
 For transactions [A, B, C, D]:
 
                  Root
-                /    \
+                /    \\
             H(AB)    H(CD)
-            /  \      /  \
+            /  \\      /  \\
           H(A) H(B) H(C) H(D)
            |    |    |    |
            A    B    C    D
@@ -51,7 +51,7 @@ def double_sha256(data: bytes) -> bytes:
     """
     # TODO: Implement double SHA256
     # Hint: Apply SHA256 twice: sha256(sha256(data))
-    return hashlib.sha256(hashlib.sha256(data))
+    return hashlib.sha256(hashlib.sha256(data).digest()).digest()
 
 
 def merkle_parent(left: str, right: str) -> str:
@@ -68,7 +68,12 @@ def merkle_parent(left: str, right: str) -> str:
     """
     # TODO: Implement merkle_parent
     # Hint: Concatenate bytes, then double_sha256, then convert to hex
-    return hex(double_sha256(left + right))
+    left_bytes = bytes.fromhex(left)
+    right_bytes = bytes.fromhex(right)
+
+    parent = double_sha256(left_bytes + right_bytes)
+
+    return parent.hex()
 
 
 def merkle_root(tx_hashes: List[str]) -> str:
@@ -139,6 +144,30 @@ def merkle_proof(tx_hashes: List[str], index: int) -> List[Tuple[str, str]]:
     if len(tx_hashes) == 1:
         return ()
 
+    proof_path = []
+    cur_hashes = tx_hashes[:]
+    while len(cur_hashes) > 1:
+        parent_hashes = []
+
+        # Pad with ZERO_HASH
+        if len(cur_hashes) % 2 == 1:
+            cur_hashes.append(ZERO_HASH)
+
+        if index % 2 == 0: # Need right sibling
+            proof_path.append((cur_hashes[index + 1], 'right'))
+        else:
+            proof_path.append((cur_hashes[index - 1], 'left'))
+
+        index = index // 2
+
+        # Pair up every two hashes and place combined hash in new list
+        for i in range(0, len(cur_hashes), 2):
+            left, right = cur_hashes[i], cur_hashes[i + 1]
+            parent_hashes.append(merkle_parent(left, right))
+
+        cur_hashes = parent_hashes
+    return proof_path
+
 
 def verify_merkle_proof(tx_hash: str, proof: List[Tuple[str, str]], root: str) -> bool:
     """
@@ -157,4 +186,18 @@ def verify_merkle_proof(tx_hash: str, proof: List[Tuple[str, str]], root: str) -
     """
     # TODO: Implement verify_merkle_proof
     # Hint: Walk up the proof, combining hashes based on position
-    pass
+    cur_hash = tx_hash
+    for sibling, pos in proof:
+        if pos == 'left':
+            cur_hash = merkle_parent(sibling, cur_hash)
+        else:
+            cur_hash = merkle_parent(cur_hash, sibling)
+
+    return cur_hash == root
+
+if __name__ == "__main__":
+    hashes = [double_sha256(b'A').hex(), double_sha256(b'B').hex(), double_sha256(b'C').hex(), double_sha256(b'D').hex()]
+    root = merkle_root(hashes)
+    index = 2
+    proof = merkle_proof(hashes, index)
+    print(verify_merkle_proof(hashes[index], proof, root))
