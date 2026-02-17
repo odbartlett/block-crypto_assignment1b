@@ -51,7 +51,7 @@ def double_sha256(data: bytes) -> bytes:
     """
     # TODO: Implement double SHA256
     # Hint: Apply SHA256 twice: sha256(sha256(data))
-    pass
+    return hashlib.sha256(hashlib.sha256(data))
 
 
 def merkle_parent(left: str, right: str) -> str:
@@ -68,7 +68,7 @@ def merkle_parent(left: str, right: str) -> str:
     """
     # TODO: Implement merkle_parent
     # Hint: Concatenate bytes, then double_sha256, then convert to hex
-    pass
+    return hex(double_sha256(left + right))
 
 
 def merkle_root(tx_hashes: List[str]) -> str:
@@ -91,7 +91,26 @@ def merkle_root(tx_hashes: List[str]) -> str:
     # TODO: Implement merkle_root
     # Hint: Use a while loop, processing pairs until only root remains
     # Hint: If odd number of elements, append ZERO_HASH (not duplicate last)
-    pass
+    if len(tx_hashes) == 0:
+        return double_sha256("")
+    if len(tx_hashes) == 1:
+        return tx_hashes[0]
+
+    cur_hashes = tx_hashes[:]
+    while len(cur_hashes) > 1:
+        parent_hashes = []
+
+        # Pad with ZERO_HASH
+        if len(cur_hashes) % 2 == 1:
+            cur_hashes.append(ZERO_HASH)
+
+        # Pair up every two hashes and place combined hash in new list
+        for i in range(0, len(cur_hashes), 2):
+            left, right = cur_hashes[i], cur_hashes[i + 1]
+            parent_hashes.append(merkle_parent(left, right))
+
+        cur_hashes = parent_hashes
+    return cur_hashes[0]
 
 
 def merkle_proof(tx_hashes: List[str], index: int) -> List[Tuple[str, str]]:
@@ -115,7 +134,10 @@ def merkle_proof(tx_hashes: List[str], index: int) -> List[Tuple[str, str]]:
     """
     # TODO: Implement merkle_proof
     # Hint: Track the index as you move up the tree (idx = idx // 2)
-    pass
+    if index >= len(tx_hashes):
+        return ()
+    if len(tx_hashes) == 1:
+        return ()
 
 
 def verify_merkle_proof(tx_hash: str, proof: List[Tuple[str, str]], root: str) -> bool:
