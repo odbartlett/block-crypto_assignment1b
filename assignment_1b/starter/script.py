@@ -36,7 +36,7 @@ def sha256_hash(data: bytes) -> bytes:
     """
     # TODO: Implement sha256_hash
     # Hint: Use hashlib.sha256(data).digest()
-    pass
+    return hashlib.sha256(data).digest()
 
 
 def verify_p2pkh(signature: bytes, pubkey: bytes, expected_pubkey_hash: bytes, tx_data: bytes) -> bool:
@@ -62,8 +62,17 @@ def verify_p2pkh(signature: bytes, pubkey: bytes, expected_pubkey_hash: bytes, t
     """
     # TODO: Implement verify_p2pkh
     # Step 1: Check that sha256_hash(pubkey) == expected_pubkey_hash
+    pubkey_hash = sha256_hash(pubkey)
+    if pubkey_hash != expected_pubkey_hash:
+        return False
+    
     # Step 2: Verify the signature using VerifyKey
-    pass
+    try:
+        VerifyKey(pubkey).verify(tx_data, signature)
+    except BadSignatureError:
+        return False
+    
+    return True
 
 
 class Script:
@@ -86,7 +95,15 @@ class Script:
         - Data elements (hex strings) are converted to bytes
         """
         # TODO: Implement serialization
-        pass
+        byte_representation = b''
+        for e in self.elements:
+            if e in OPCODES:
+                byte_representation = byte_representation + e.encode('utf-8')
+            else:
+                byte_representation = byte_representation + bytes.fromhex(e)
+        
+        return byte_representation
+        
 
     @staticmethod
     def p2pkh_locking_script(pub_key_hash: str) -> 'Script':
@@ -166,7 +183,8 @@ class ScriptInterpreter:
         Stack: [..., a] -> [..., a, a]
         """
         # TODO: Implement OP_DUP
-        pass
+        last_elem = self.stack[-1] # IndexError if empty stack
+        self.stack.append(last_elem)
 
     def _op_sha256(self):
         """
@@ -175,7 +193,7 @@ class ScriptInterpreter:
         Stack: [..., data] -> [..., sha256(data)]
         """
         # TODO: Implement OP_SHA256
-        pass
+        last_elem = self.stack.pop() # IndexError if empty stack
 
     def _op_equalverify(self) -> bool:
         """
@@ -202,3 +220,9 @@ class ScriptInterpreter:
         """
         # TODO: Implement OP_CHECKSIG
         pass
+
+
+if __name__ == "__main__":
+    data1 = 'data1'.encode('utf-8').hex()
+    script = Script(['OP_DUP', data1 , 'OP_CHECKSIG'])
+    print(script.to_bytes())
