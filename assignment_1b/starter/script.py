@@ -1,6 +1,6 @@
 import hashlib
 from typing import List
-from nacl.signing import VerifyKey
+from nacl.signing import VerifyKey, SigningKey
 from nacl.exceptions import BadSignatureError
 
 """
@@ -174,7 +174,26 @@ class ScriptInterpreter:
         # TODO: Implement script execution
         # Hint: Loop through script.elements, check if each is an opcode or data
         # Use try/except to catch errors and return False
-        pass
+        OPCODES = {OP_DUP, OP_SHA256, OP_EQUALVERIFY, OP_CHECKSIG}
+        try:
+            for elem in script.elements:
+                if elem in OPCODES:
+                    if elem == OP_DUP:
+                        self._op_dup()
+                    elif elem == OP_SHA256:
+                        self._op_sha256()
+                    elif elem == OP_EQUALVERIFY:
+                        if not self._op_equalverify():
+                            return False
+                    else:
+                        self._op_checksig(tx_data)
+                else:
+                    self.stack.append(bytes.fromhex(elem))
+            script_result = self.stack[-1] != b'\x00'
+            return script_result
+        except Exception:
+            return False
+
 
     def _op_dup(self):
         """
@@ -194,6 +213,8 @@ class ScriptInterpreter:
         """
         # TODO: Implement OP_SHA256
         last_elem = self.stack.pop() # IndexError if empty stack
+        self.stack.append(sha256_hash(last_elem))
+
 
     def _op_equalverify(self) -> bool:
         """
@@ -205,7 +226,9 @@ class ScriptInterpreter:
         Note: This operation removes both elements from the stack.
         """
         # TODO: Implement OP_EQUALVERIFY
-        pass
+        b = self.stack.pop() # IndexError if empty stack
+        a = self.stack.pop() # IndexError if empty stack
+        return a == b
 
     def _op_checksig(self, tx_data: bytes):
         """
@@ -219,10 +242,35 @@ class ScriptInterpreter:
         Hint: Use VerifyKey from nacl.signing to verify the signature.
         """
         # TODO: Implement OP_CHECKSIG
-        pass
+        pubKey = self.stack.pop() # IndexError if empty stack
+        signature = self.stack.pop() # IndexError if empty stack
+
+        try:
+            VerifyKey(pubKey).verify(tx_data, signature)
+            self.stack.append(b'\x01')
+        except BadSignatureError:
+            self.stack.append(b'\x00')
 
 
 if __name__ == "__main__":
+    # Serialization test
     data1 = 'data1'.encode('utf-8').hex()
     script = Script(['OP_DUP', data1 , 'OP_CHECKSIG'])
     print(script.to_bytes())
+
+    # ScriptInterpreter test
+    sk = SigningKey.generate()
+    vk = sk.verify_key
+    pub = vk.encode()
+    tx = b"tx"
+
+    sig = sk.sign(tx).signature
+    h = sha256_hash(pub)
+
+    # Build P2PKH scriptSig || scriptPubKey
+    s_sig = Script.p2pkh_unlocking_script(sig.hex(), pub.hex())
+    s_lock = Script.p2pkh_locking_script(h.hex())
+    full = Script(s_sig.elements + s_lock.elements)
+
+    # Run interpreter
+    print(ScriptInterpreter().execute(full, tx))
