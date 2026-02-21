@@ -76,7 +76,7 @@ def merkle_parent(left: str, right: str) -> str:
     return parent.hex()
 
 
-def merkle_root(tx_hashes: List[str]) -> str:
+def build_merkle_tree(tx_hashes: List[str]) -> str:
     """
     Compute the Merkle root of a list of transaction hashes.
 
@@ -93,7 +93,7 @@ def merkle_root(tx_hashes: List[str]) -> str:
     Returns:
         The Merkle root as a hex string
     """
-    # TODO: Implement merkle_root
+    # TODO: Implement build_merkle_tree
     # Hint: Use a while loop, processing pairs until only root remains
     # Hint: If odd number of elements, append ZERO_HASH (not duplicate last)
     if len(tx_hashes) == 0:
@@ -197,7 +197,7 @@ def verify_merkle_proof(tx_hash: str, proof: List[Tuple[str, str]], root: str) -
 
 if __name__ == "__main__":
     hashes = [double_sha256(b'A').hex(), double_sha256(b'B').hex(), double_sha256(b'C').hex(), double_sha256(b'D').hex()]
-    root = merkle_root(hashes)
+    root = build_merkle_tree(hashes)
     index = 2
     proof = merkle_proof(hashes, index)
     print(verify_merkle_proof(hashes[index], proof, root))
