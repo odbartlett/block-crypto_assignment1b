@@ -75,7 +75,7 @@ class Node:
         utxos: List[str] = []
         for tx in genesis.txs:
             for i in range(len(tx.outputs)):
-                utxos.append(f"{tx.number}:{i}")
+                utxos.append(f"{tx.tx_hash}:{i}")
         chain = Blockchain(chain=[genesis], utxos=utxos)
         self.chains.append(chain)
 
@@ -228,12 +228,12 @@ class Node:
             idx = self._output_index_for_input(blockchain, inp)
             if idx is None:
                 return False
-            utxo_id = f"{inp.number}:{idx}"
+            utxo_id = f"{inp.tx_hash}:{idx}"
             if utxo_id in spent:
                 return False
             if utxo_id not in blockchain.utxos:
                 return False
-            creating_tx = self.find_transaction(blockchain, inp.number)
+            creating_tx = self.find_transaction(blockchain, inp.tx_hash)
             assert creating_tx is not None
             input_sum += creating_tx.outputs[idx].value
             spent.add(utxo_id)
@@ -249,7 +249,7 @@ class Node:
 
     def _output_index_for_input(self, blockchain: Blockchain, inp: Input) -> Optional[int]:
         """Find the output index in the creating transaction for this input."""
-        tx = self.find_transaction(blockchain, inp.number)
+        tx = self.find_transaction(blockchain, inp.tx_hash)
         if tx is None:
             return None
         for i, out in enumerate(tx.outputs):
@@ -269,11 +269,11 @@ class Node:
         for inp in tx.inputs:
             idx = self._output_index_for_input(blockchain, inp)
             if idx is not None:
-                utxo_id = f"{inp.number}:{idx}"
+                utxo_id = f"{inp.tx_hash}:{idx}"
                 if utxo_id in blockchain.utxos:
                     blockchain.utxos.remove(utxo_id)
         for i in range(len(tx.outputs)):
-            blockchain.utxos.append(f"{tx.number}:{i}")
+            blockchain.utxos.append(f"{tx.tx_hash}:{i}")
 
     def verify_pow(self, block: Block) -> bool:
         """Verify proof of work meets difficulty requirement."""

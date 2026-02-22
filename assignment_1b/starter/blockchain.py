@@ -25,24 +25,24 @@ class Blockchain:
             for inp in tx.inputs:
                 idx = self._output_index_for_input(inp)
                 if idx is not None:
-                    utxo_id = f"{inp.number}:{idx}"
+                    utxo_id = f"{inp.tx_hash}:{idx}"
                     if utxo_id in self.utxos:
                         self.utxos.remove(utxo_id)
             for i in range(len(tx.outputs)):
-                self.utxos.append(f"{tx.number}:{i}")
+                self.utxos.append(f"{tx.tx_hash}:{i}")
         return True
 
-    def _find_transaction(self, tx_number: str) -> Optional[Transaction]:
-        """Find a transaction by its number in the chain."""
+    def _find_transaction(self, tx_hash: str) -> Optional[Transaction]:
+        """Find a transaction by its hash in the chain."""
         for block in self.chain:
             for tx in block.txs:
-                if tx.number == tx_number:
+                if tx.tx_hash == tx_hash:
                     return tx
         return None
 
     def _output_index_for_input(self, inp: Input) -> Optional[int]:
         """Return the output index in the creating transaction for this input."""
-        tx = self._find_transaction(inp.number)
+        tx = self._find_transaction(inp.tx_hash)
         if tx is None:
             return None
         for i, out in enumerate(tx.outputs):

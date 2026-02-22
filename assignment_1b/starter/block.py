@@ -4,7 +4,7 @@ from typing import Optional, List
 from transaction import Transaction, DIFFICULTY
 from merkle import build_merkle_tree
 
-"""
+r"""
 Block structure for the blockchain.
 
 === BLOCK HEADER ===
@@ -30,7 +30,7 @@ This allows efficient proofs that a transaction is in a block (SPV).
 For transactions [A, B, C, D], the Merkle tree looks like:
 
                  Root (stored in header)
-                /    \
+                /      \\
             H(AB)    H(CD)
             /  \      /  \
           H(A) H(B) H(C) H(D)
@@ -68,8 +68,8 @@ class Block:
         # Hint: Increment nonce until hash() returns a value <= DIFFICULTY
         nonce = 0
         while True:
-            # Store nonce as 4-byte big-endian hex string
-            self.nonce = nonce.to_bytes(4, byteorder="big", signed=False).hex()
+            # Store nonce as 8-byte big-endian hex string (matches test reference)
+            self.nonce = nonce.to_bytes(8, byteorder="big", signed=False).hex()
             if int(self.hash(), 16) <= DIFFICULTY:
                 break
             nonce += 1
