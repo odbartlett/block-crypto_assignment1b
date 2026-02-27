@@ -97,7 +97,7 @@ def build_merkle_tree(tx_hashes: List[str]) -> str:
     # Hint: Use a while loop, processing pairs until only root remains
     # Hint: If odd number of elements, append ZERO_HASH (not duplicate last)
     if len(tx_hashes) == 0:
-        return double_sha256("")
+        return double_sha256(b"").hex()
     if len(tx_hashes) == 1:
         return tx_hashes[0]
 
