@@ -71,7 +71,7 @@ def build_transaction(inputs: List[Input], outputs: List[Output], signing_key: S
     # Create unsigned transaction with empty scriptSigs
     unsigned_inputs = []
     for i in inputs:
-        unsigned_inputs.append(Input(i.output, i.tx_hash, Script([])))
+        unsigned_inputs.append(Input(i.output, i.tx_hash, i.output_index, Script([])))
     tx = Transaction(unsigned_inputs, outputs)
 
     # Sign the transaction data

@@ -42,11 +42,4 @@ class Blockchain:
 
     def _output_index_for_input(self, inp: Input) -> Optional[int]:
         """Return the output index in the creating transaction for this input."""
-        tx = self._find_transaction(inp.tx_hash)
-        if tx is None:
-            return None
-        for i, out in enumerate(tx.outputs):
-            if (out.value == inp.output.value and
-                    out.script_pubkey.elements == inp.output.script_pubkey.elements):
-                return i
-        return None
+        return inp.output_index

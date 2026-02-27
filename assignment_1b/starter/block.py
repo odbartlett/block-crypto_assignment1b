@@ -54,6 +54,7 @@ class Block:
         self.txs = txs
         self.nonce = nonce
         self.prev = prev
+        self.pow = None
 
     def get_merkle_root(self) -> str:
         """Compute the Merkle root of all transactions in the block."""
@@ -71,6 +72,7 @@ class Block:
             # Store nonce as 8-byte big-endian hex string (matches test reference)
             self.nonce = nonce.to_bytes(8, byteorder="big", signed=False).hex()
             if int(self.hash(), 16) <= DIFFICULTY:
+                self.pow = self.hash()
                 break
             nonce += 1
 
